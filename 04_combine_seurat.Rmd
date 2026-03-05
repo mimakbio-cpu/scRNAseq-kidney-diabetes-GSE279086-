@@ -1,0 +1,57 @@
+---
+title: "Combine All Seurat Objects"
+author: "Abdul Kader Ibrahim"
+date: "`r Sys.Date()`"
+output: html_document
+---
+```{r Define the directories}
+inputDir <- "./GSE279086/input/"
+outputDir <- "./GSE279086/output/"
+plotDir <- "./GSE279086/plots/"
+```
+
+
+```{r Load the packages}
+library(Seurat)
+library(SeuratDisk)
+library(dplyr)
+library(R.utils)  
+library(ggplot2)
+library(ggExtra)
+library(RColorBrewer)
+library(openxlsx)
+library(dplyr)
+library(scales)
+library(HGNChelper)
+library(dittoSeq)
+library(harmony)
+library(batchelor)
+
+library(SingleCellExperiment)
+```
+
+
+```{r Check for duplicate genes}
+sapply(seurat_list, function(obj) {
+  sum(duplicated(rownames(GetAssayData(obj, layer = "counts"))))
+})
+# Got 0s in all samples (meaning no duplicate genes are present in any of the samples) and thus no need to run and save clean_seurat_list. Proceed with seurat_list. But because in downstream, we have 'clean_seurat_list' everywhere, we'll do
+clean_seurat_list <- seurat_list
+```
+
+
+
+```{r Merge all Seurat objects into one}
+
+seurat_combined <- merge(clean_seurat_list[[1]], y = clean_seurat_list[-1], add.cell.ids = names(clean_seurat_list))
+unique(seurat_combined$orig.ident)
+
+saveRDS(seurat_combined, file =  paste0(outputDir,"GSE279086_seurat_combined.rds"))
+seurat_combined <- readRDS(file = paste0(outputDir, "GSE279086_seurat_combined.rds"))
+
+# Explore Combined Seurat Object}
+class(seurat_combined)            # 'Seurat'
+Assays(seurat_combined)           # (RNA) assays available in the rds
+DefaultAssay(seurat_combined)     # default/active (RNA) assay in the rds
+dim(seurat_combined)              # 28317 genes/features x 181842 cells (TOTAL 40 Objects)
+```
