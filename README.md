@@ -19,7 +19,7 @@
 | 03 | 10X to Seurat | ✅ Complete |
 | 04 | Combine Seurat Objects | ✅ Complete |
 | 05 | QC, PCA & Batch Correction | ✅ Complete |
-| 06 | Cell Type Annotation | 🔜 In Progress |
+| 06 | Cell Type Annotation | ✅ Complete |
 | 07 | Differential Expression | 🔜 Planned |
 | 08 | Pathway Enrichment | 🔜 Planned |
 
@@ -33,7 +33,7 @@ This repository presents a **reproducible, end-to-end workflow** for analyzing s
 
 - **GEO Accession:** [GSE279086](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE279086)
 - **Technology:** 10x Genomics single-cell 3' RNA-seq
-- **Samples:** 40 kidney biopsies (20 Control, 20 Type 1 Diabetes)
+- **Samples:** 40 kidney biopsies (Control vs Type 1 Diabetes)
 - **Organism:** *Homo sapiens*
 - **Focus:** Early transcriptional changes in diabetic kidney disease
 
@@ -361,31 +361,6 @@ scRNAseq-kidney-diabetes-GSE279086/
 
 ---
 
-## Roadmap
-
-- [x] Data download and preprocessing
-- [x] Quality control and batch correction
-- [ ] Cell type annotation with CellTypist
-- [ ] Differential expression analysis
-- [ ] Pathway enrichment analysis
-- [ ] Interactive visualization (Shiny app)
-- [ ] Cell-cell communication analysis
-- [ ] Integration with published kidney atlases
-
----
-
-## Citation
-
-If you use this workflow in your research, please cite:
-
-```
-Ibrahim, A. K. (2026). Single-cell RNA-seq Analysis Workflow for GSE279086. 
-GitHub: https://github.com/mimakbio-cpu/scRNAseq-kidney-diabetes-GSE279086-
-```
-
-**Original Dataset Citation:** (Will be added upon publication)
-
----
 
 ## License
 
@@ -402,7 +377,7 @@ NGS Lab Scientist | Bioinformatics Researcher
 - **LinkedIn:** [linkedin.com/in/dnaseq](https://linkedin.com/in/dnaseq)
 - **GitHub:** [@mimakbio-cpu](https://github.com/mimakbio-cpu)
 
-*Passionate about single-cell genomics, disease modeling, and reproducible computational workflows.*
+*Passionate about single-cell genomics, variants and reproducible computational workflows.*
 
 ---
 
