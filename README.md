@@ -6,7 +6,7 @@
 [![Dataset: GSE279086](https://img.shields.io/badge/GEO-GSE279086-green)](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE279086)
 
 **Author:** Abdul Kader Ibrahim  
-**Date:** 2026-03-05
+**Date:** 2026-05-16
 
 ---
 
@@ -197,7 +197,7 @@ graph TD
 
 ---
 
-### 08. Pathway Enrichment (Planned)
+### 08. Pathway Enrichment 
 
 **Script:** `08_Pathways_GSE279086.Rmd`
 
@@ -289,46 +289,21 @@ bash 02_cleanup_GEO.sh
 Rscript -e "rmarkdown::render('03_10XtoSeurat.Rmd')"
 Rscript -e "rmarkdown::render('04_combine_seurat.Rmd')"
 Rscript -e "rmarkdown::render('05_qc_PCA_batchcorrection.Rmd')"
+# Run 06 in Jupyter: jupyter notebook 06_celltypist_GSE279086.ipynb
+Rscript -e "rmarkdown::render('07_DEGs_GSE183276.Rmd')"
+Rscript -e "rmarkdown::render('08_Pathways_GSE279086.Rmd')"
 ```
 
 ### Expected Runtime
 
-- Data download: ~2-4 hours
-- QC & integration: ~1-2 hours  
-- Cell typing: ~30 minutes  
-- **Total:** ~4-7 hours
-
----
-
-## Key Results & Interpretation
-
-### Quality Control
-
-**Multi-layered QC successfully removed low-quality cells**
-- Applied gene count, mitochondrial fraction, ribosomal fraction filters
-- Mahalanobis distance outlier detection for subtle quality issues
-- Retained high-confidence cells for downstream analysis
-
-### Batch Correction
-
-**Harmony integration reduced technical variation**
-- Successfully merged 40 samples
-- Preserved biological structure while removing batch effects
-- Generated coherent UMAP clusters
-
-### Anticipated Findings (Steps 06-08)
-
-**Cell Type Composition:**
-- Expected remodeling of endothelial and tubular compartments
-- Possible reduction in podocyte populations in T1D samples
-
-**Differential Expression:**
-- Anticipated transcriptional shifts in principal cells and vascular endothelium
-- Cell-type-specific responses to diabetic stress
-
-**Pathway Enrichment:**
-- Predicted enrichment in oxidative metabolism pathways
-- Vascular signaling alterations consistent with early diabetic kidney stress
+| Stage | Time |
+|-------|------|
+| Data download | 2–4 hours |
+| QC & integration | 1–2 hours |
+| Cell typing | ~30 minutes |
+| DEG analysis | ~1–2 hours |
+| Pathway enrichment | ~30 minutes |
+| **Total** | **~5–9 hours** |
 
 ---
 
@@ -426,4 +401,4 @@ Contributions, issues, and feature requests are welcome! Feel free to check the 
 
 ---
 
-**Last Updated:** March 7, 2026
+**Last Updated:** May 16, 2026
