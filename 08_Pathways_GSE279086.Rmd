@@ -1,0 +1,197 @@
+---
+title: "08_Pathways_GSE279086"
+author: "Abdul Kader Ibrahim"
+date: "2026-05-15"
+output: html_document
+---
+
+# pathways
+
+```{r}
+all_pathways_df <- data.frame()
+
+for (file_path in deg_files) {
+
+  file_name <- basename(file_path)
+  message("\n==============================")
+  message("▶ Processing file: ", file_name)
+
+  ## ---- Cell type extraction ----
+  celltype <- sub("^DEG_(.*?)_DKD_vs_Healthy\\.csv$", "\\1", file_name)
+
+  if (celltype == file_name) {
+    warning("⚠ Celltype extraction FAILED for file: ", file_name)
+    next
+  }
+
+  celltype_clean <- gsub("[^a-zA-Z0-9]", "_", celltype)
+  condition <- "DKD_vs_Healthy"
+
+  message("  ✔ Cell type identified: ", celltype)
+
+  ## ---- Read DEG file ----
+  res <- tryCatch(
+    read.csv(file_path, stringsAsFactors = FALSE),
+    error = function(e) {
+      message(" Failed to read file: ", e$message)
+      return(NULL)
+    }
+  )
+  if (is.null(res)) next
+
+  message("  ✔ DEG rows read: ", nrow(res))
+
+  ## ---- Required columns ----
+  if (!all(c("gene", "avg_log2FC") %in% colnames(res))) {
+    warning("  ⚠ Missing required columns in: ", file_name)
+    next
+  }
+
+  ## ---- SYMBOL → ENTREZ ----
+  ncbi_map <- suppressMessages(
+    clusterProfiler::bitr(
+      res$gene,
+      fromType = "SYMBOL",
+      toType = "ENTREZID",
+      OrgDb = org.Hs.eg.db
+    )
+  )
+
+  message("  ✔ Genes mapped to ENTREZ: ", nrow(ncbi_map))
+
+  res_mapped <- res %>%
+    left_join(ncbi_map, by = c("gene" = "SYMBOL")) %>%
+    filter(!is.na(ENTREZID)) %>%
+    distinct(ENTREZID, .keep_all = TRUE)
+
+  message(" Genes after filtering: ", nrow(res_mapped))
+
+  ## ---- Ranked gene list ----
+  gene_list <- res_mapped$avg_log2FC
+  names(gene_list) <- res_mapped$ENTREZID
+  gene_list <- sort(gene_list, decreasing = TRUE)
+
+  message("  ✔ Ranked gene list length: ", length(gene_list))
+
+  if (length(gene_list) < 20) {
+    message("  ⏭ Skipping GSEA: too few genes")
+    next
+  }
+
+  ## ---- Run GSEA ----
+  message(" Running Reactome GSEA...")
+
+  gsea_res <- tryCatch(
+    gsePathway(
+      geneList = gene_list,
+      organism = "human",
+      eps = 0,
+      verbose = FALSE
+    ),
+    error = function(e) {
+      message("  GSEA FAILED: ", e$message)
+      return(NULL)
+    }
+  )
+
+  if (is.null(gsea_res) || nrow(gsea_res@result) == 0) {
+    message("  ⏭ No significant pathways")
+    next
+  }
+
+  ## ---- Make readable ----
+  gsea_res <- setReadable(
+    gsea_res,
+    OrgDb = org.Hs.eg.db,
+    keyType = "ENTREZID"
+  )
+
+  pathways <- gsea_res@result %>%
+    filter(
+      !is.na(Description),
+      !is.na(NES),
+      !is.na(p.adjust),
+      !is.na(setSize)
+    )
+
+  message(" Valid pathways: ", nrow(pathways))
+
+  if (nrow(pathways) == 0) next
+
+  ## ---- Add metadata ----
+  pathways$CellType  <- celltype
+  pathways$Condition <- condition
+
+  all_pathways_df <- rbind(all_pathways_df, pathways)
+
+  ## ---- Save per-cell CSV ----
+  out_csv <- file.path(
+    deg_path,
+    paste0(celltype_clean, "_Reactome_GSEA_", condition, ".csv")
+  )
+  write.csv(pathways, out_csv, row.names = FALSE)
+
+  message("  ✔ GSEA CSV written for ", celltype)
+}
+```
+
+
+
+```{r}
+gsea_png_files <- c()
+
+for (ct in unique(all_pathways_df$CellType)) {
+
+  df_ct <- all_pathways_df %>%
+    filter(CellType == ct)
+
+  if (nrow(df_ct) == 0) {
+    message(" No pathways to plot")
+    next
+  }
+
+  ## ---- Select top pathways ----
+  top_pathways <- df_ct %>%
+    arrange(desc(abs(NES))) %>%
+    slice_head(n = 10)
+
+ if (nrow(top_pathways) == 0) next
+
+  ## ---- Order pathways by NES ----
+  top_pathways$Description <- factor(
+    top_pathways$Description,
+    levels = top_pathways$Description[order(top_pathways$NES)]
+  )
+
+  ## ---- Plot ----
+  p <- ggplot(
+    top_pathways,
+    aes(x = NES, y = Description, color = p.adjust, size = setSize)
+  ) +
+    geom_point() +
+    theme_minimal() +
+  theme(
+    axis.text.y = element_text(size = 7, face = "bold"),
+    axis.text.x = element_text(size = 7, face = "bold")
+  )
+  ## ---- Save PNG ----
+  ct_clean <- gsub("[^a-zA-Z0-9]", "_", ct)
+
+  png_file <- file.path(
+    deg_path,
+    paste0(ct_clean, ".png")
+  )
+
+  png(png_file, width = 9, height = 6, units = "in", res = 300)
+  print(p)
+  dev.off()
+
+  gsea_png_files <- c(gsea_png_files, png_file)
+}
+
+```
+
+
+
+
+
