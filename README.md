@@ -20,8 +20,8 @@
 | 04 | Combine Seurat Objects | ✅ Complete |
 | 05 | QC, PCA & Batch Correction | ✅ Complete |
 | 06 | Cell Type Annotation | ✅ Complete |
-| 07 | Differential Expression | 🔜 Planned |
-| 08 | Pathway Enrichment | 🔜 Planned |
+| 07 | Differential Expression | ✅ Complete |
+| 08 | Pathway Enrichment | ✅ Complete |
 
 ---
 
@@ -158,40 +158,42 @@ graph TD
 
 ---
 
-### 06. Cell Type Annotation (In Progress)
+### 06. Cell Type Annotation
 
 **Script:** `06_celltypist_GSE279086.ipynb`
 
 **Purpose:** Annotate cell types using CellTypist with kidney reference.
 
-**Planned Analyses:**
+**Analyses:**
 - Automated cell type prediction
 - UMAP visualization by condition (Control vs T1D)
 - Cell composition analysis
 - Identification of cell type shifts
 
-**Expected Outputs:**
+**Outputs:**
 - Annotated `.h5ad` object
 - Cell type proportion tables
 - UMAP plots colored by cell type and condition
 
 ---
 
-### 07. Differential Expression Analysis (Planned)
+### 07. Differential Expression Analysis
 
 **Script:** `07_DEGs_GSE279086.Rmd`
 
 **Purpose:** Identify transcriptional changes within cell types.
 
-**Planned Methods:**
-- MAST differential expression testing
-- Cell-type-specific Control vs T1D comparisons
+**Methods:**
+- MAST hurdle model via `FindMarkers()` in Seurat
+- Per cell type comparisons: DKD vs Healthy
+- Latent variables corrected for: `nCount_RNA`, `percent.mt`
+- Minimum 20 cells per group enforced
+- All genes tested (`logfc.threshold = 0`, `min.pct = 0.1`)
 - Multiple testing correction (FDR < 0.05)
-
-**Expected Outputs:**
-- DEG tables per cell type
-- Volcano plots
-- Heatmaps of top differentially expressed genes
+- 
+**Outputs:**
+- Per cell type DEG tables (`DEG_MAST_DKD_vs_Healthy/`)
+- DEG summary table (`DEGsummary_table.csv`)
 
 ---
 
@@ -201,18 +203,36 @@ graph TD
 
 **Purpose:** Connect DEGs to biological processes and pathways.
 
-**Planned Methods:**
-- Reactome pathway enrichment
+**Methods:**
+- GO Biological Process enrichment (`clusterProfiler`)
 - KEGG pathway analysis
+- Reactome pathway enrichment (`ReactomePA`)
 - Gene Set Enrichment Analysis (GSEA)
-
-**Expected Findings:**
-- Metabolic pathway remodeling
-- Vascular signaling alterations
-- Cell-type-specific pathway dysregulation
+- Gene ID mapping via `org.Hs.eg.db`
+  
+**Outputs:**
+- Reactome GSEA results (`REACTOME_GSEA.pdf`)
+- Pathway enrichment tables per cell type
 
 ---
-
+## Key Results
+ 
+### Quality Control
+Multi-layered QC successfully removed low-quality cells using gene count, mitochondrial fraction, ribosomal fraction filters, and Mahalanobis distance outlier detection.
+ 
+### Batch Correction
+Harmony integration successfully merged 40 samples, preserving biological structure while removing technical batch effects.
+ 
+### Cell Type Annotation
+CellTypist with the Adult Human Kidney reference model annotated all major kidney cell types. Distinct cell type compositions were observed between Control and Type 1 Diabetes conditions.
+ 
+### Differential Expression
+MAST identified cell-type-specific transcriptional changes between DKD and Healthy samples, with significant DEGs across multiple kidney compartments.
+ 
+### Pathway Enrichment
+Reactome and GSEA analyses revealed dysregulated pathways including metabolic remodeling, vascular signaling alterations, and cell-type-specific stress responses consistent with early diabetic nephropathy.
+ 
+---
 ## Installation & Setup
 
 ### Prerequisites
@@ -313,22 +333,30 @@ Rscript -e "rmarkdown::render('05_qc_PCA_batchcorrection.Rmd')"
 ---
 
 ## Repository Structure
-
+ 
 ```
 scRNAseq-kidney-diabetes-GSE279086/
-├── README.md                              # This file
-├── environment.yml                        # Conda environment specification
-├── 01_GEO_download.sh                    # Download GEO data
-├── 02_cleanup_GEO.sh                     # Standardize file format
-├── 03_10XtoSeurat.Rmd                    # Create Seurat objects
-├── 04_combine_seurat.Rmd                 # Merge datasets
-├── 05_qc_PCA_batchcorrection.Rmd        # QC and integration
-├── 06_celltypist_GSE279086.ipynb        # Cell type annotation (upcoming)
-├── 07_DEGs_GSE279086.Rmd                # Differential expression (upcoming)
-├── 08_Pathways_GSE279086.Rmd            # Pathway enrichment (upcoming)
-└── Pre-QC and Post-QC Plots.pdf         # QC visualization results
+├── README.md                                          # This file
+├── environment.yml                                    # Conda environment specification
+├── 01_GEO_download.sh                                # Download GEO data
+├── 02_cleanup_GEO.sh                                 # Standardize file format
+├── 03_10XtoSeurat.Rmd                                # Create Seurat objects
+├── 04_combine_seurat.Rmd                             # Merge datasets
+├── 05_qc_PCA_batchcorrection.Rmd                    # QC and integration
+├── 06_celltypist_GSE279086.ipynb                    # Cell type annotation
+├── 07_DEGs_GSE183276.Rmd                            # Differential expression (MAST)
+├── 08_Pathways_GSE279086.Rmd                        # Pathway enrichment
+├── Protein_coding_genes.txt                          # Reference gene list
+├── Adult_Human_Kidney.pkl                            # CellTypist kidney model
+├── Cell Types (UMAP) - Control vs Type 1 Diabetes   # UMAP plot (PDF)
+├── Cellproportions_barplot.pdf                       # Cell proportion bar plot
+├── Cluster_Markergenes.pdf                           # Cluster marker genes plot
+├── DEGsummary_table.csv                              # DEG summary across cell types
+├── GSE279086_umap_coordinates.csv                   # Final UMAP coordinates
+├── Pre-QC and Post-QC Plots.pdf                     # QC comparison plots
+└── REACTOME_GSEA.pdf                                 # Reactome pathway enrichment plot
 ```
-
+ 
 ---
 
 ## Methods & Tools
@@ -350,6 +378,9 @@ scRNAseq-kidney-diabetes-GSE279086/
 - **Dimensionality Reduction:** PCA (30 dimensions)
 - **UMAP Parameters:** neighbors = 30, min_dist = 0.3
 - **Clustering:** Louvain algorithm (resolution TBD)
+- **Cell Annotation:**  CellTypist (Adult Human Kidney model) 
+- **Differential Expression:**  MAST hurdle model 
+- **Pathway Enrichment**  clusterProfiler, ReactomePA, GSEA 
 
 ### Software Versions
 
